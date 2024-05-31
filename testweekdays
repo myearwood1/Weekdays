@@ -1,0 +1,265 @@
+
+
+*This can be put in a OneLineDefines.h file. Add _INCLUDE OneLineDefines.h in your application-specific config.fpw file
+*You can allow OneLineDefines.h to be compiled into the exe by adding it to your project.
+*This is a little-known way to add reusable one-liners to an entire code-base.
+
+*Set this to 100 to test the Any8YearOld and TallyTable versions.
+*Set it higher to test the others after commenting out Any8YearOld
+*and TallyTable.
+#define knIterations 100
+#define kdStart {^0100-1-1}
+#define kdEnd {^9999-12-31}
+*Rev up the cpu
+WAIT WINDOW "Started!" nowait
+
+LOCAL lcBuffer1, lcBuffer2, lcBuffer3
+store space(8) to lcBuffer1, lcBuffer2, lcBuffer3
+=QueryPerformanceFrequency(@m.lcBuffer3)
+
+=QueryPerformanceCounter(@m.lcBuffer1) && Click stop watch on
+FOR X = 1 TO knIterations
+	w=Any8yearoldWEEKDAYS(kdStart,kdEnd)
+ENDFOR X
+=QueryPerformanceCounter(@m.lcBuffer2) && Click stop watch off
+?"Any 8 year old weekdays",TRANSFORM(ElapsedTicks(m.lcBuffer1, m.lcBuffer2, m.lcBuffer3)) + " secs"
+
+if not file('CalendarTally.DBF')
+	wait window 'Creating tally table' nowait
+	create table CalendarTally free ;
+		(dDate d, ;
+		dow2 n(1,0))
+	for x=0 to {^9999-12-31} - {^0100-01-01}
+		insert into CalendarTally values ({^0100-01-01}+m.x,dow({^0100-01-01}+m.x,2))
+	endfor 
+	index on ddate tag ddate
+	index on dow2 tag dow2
+	use
+ENDIF
+use CalendarTally
+=QueryPerformanceCounter(@m.lcBuffer1) && Click stop watch on
+FOR X = 1 TO knIterations
+	w=tallytableweekdays(kdStart,kdEnd)
+ENDFOR X
+=QueryPerformanceCounter(@m.lcBuffer2) && Click stop watch off
+?"tally table",TRANSFORM(ElapsedTicks(m.lcBuffer1, m.lcBuffer2, m.lcBuffer3)) + " secs"
+
+FOR X = 1 TO 1000000
+ENDFOR X
+
+
+=QueryPerformanceCounter(@m.lcBuffer1) && Click stop watch on
+FOR X = 1 TO knIterations
+	w=benWEEKDAYS(kdStart,kdEnd)
+ENDFOR X
+=QueryPerformanceCounter(@m.lcBuffer2) && Click stop watch off
+?"Ben's weekdays",TRANSFORM(ElapsedTicks(m.lcBuffer1, m.lcBuffer2, m.lcBuffer3)) + " secs"
+
+=QueryPerformanceCounter(@m.lcBuffer1) && Click stop watch on
+FOR X = 1 TO knIterations
+	w=MYWEEKDAYS(kdStart,kdEnd)
+ENDFOR X
+=QueryPerformanceCounter(@m.lcBuffer2) && Click stop watch off
+?"myweekdays",TRANSFORM(ElapsedTicks(m.lcBuffer1, m.lcBuffer2, m.lcBuffer3)) + " secs"
+
+=QueryPerformanceCounter(@m.lcBuffer1) && Click stop watch on
+FOR X = 1 TO knIterations
+	w=AIWeekDays(kdStart,kdEnd)
+ENDFOR X
+=QueryPerformanceCounter(@m.lcBuffer2) && Click stop watch off
+?"AIWeekdays",TRANSFORM(ElapsedTicks(m.lcBuffer1, m.lcBuffer2, m.lcBuffer3)) + " secs"
+
+=QueryPerformanceCounter(@m.lcBuffer1) && Click stop watch on
+FOR X = 1 TO knIterations
+	w=mmerlinnweekdays(kdStart,kdEnd)
+ENDFOR X
+=QueryPerformanceCounter(@m.lcBuffer2) && Click stop watch off
+?"mmerlinn weekdays",TRANSFORM(ElapsedTicks(m.lcBuffer1, m.lcBuffer2, m.lcBuffer3)) + " secs"
+
+=QueryPerformanceCounter(@m.lcBuffer1) && Click stop watch on
+*#include OneLineDefines.h
+#DEFINE defWeekdays (5 * INT((ABS(m.ldStart - m.ldEnd) + 1)/7) + LEN(CHRTRAN(SUBSTR('011111001111', DOW(MIN(m.ldStart, m.ldEnd)), (ABS(m.ldStart - m.ldEnd) + 1) % 7), '0', '')))
+
+FOR X = 1 TO knIterations
+	ldStart={^0100-1-1}
+	ldEnd={^9999-12-31}
+	a = defWeekdays
+ENDFOR X
+=QueryPerformanceCounter(@m.lcBuffer2) && Click stop watch off
+?"#DEFINE OneLineDefines weekdays",TRANSFORM(ElapsedTicks(m.lcBuffer1, m.lcBuffer2, m.lcBuffer3)) + " secs"
+#undef defWeekdays
+
+=QueryPerformanceCounter(@m.lcBuffer1) && Click stop watch on
+FOR X = 1 TO knIterations
+	ldStart={^0100-1-1}
+	ldEnd={^9999-12-31}
+	a=(5 * INT((;
+	ABS(m.ldStart - m.ldEnd) + 1)/7) ;
+	+ LEN(CHRTRAN(SUBSTR('011111001111', DOW(MIN(m.ldStart, m.ldEnd)), ;
+	(ABS(m.ldStart - m.ldEnd) + 1) % 7), '0', '')))
+ENDFOR X
+=QueryPerformanceCounter(@m.lcBuffer2) && Click stop watch off
+?"Manually hard coded weekdays ABS",TRANSFORM(ElapsedTicks(m.lcBuffer1, m.lcBuffer2, m.lcBuffer3)) + " secs"
+
+*!*	=QueryPerformanceCounter(@m.lcBuffer1) && Click stop watch on
+*!*	FOR X = 1 TO knIterations
+*!*		w=theworking_days(kdStart,kdEnd)
+*!*	ENDFOR X
+*!*	=QueryPerformanceCounter(@m.lcBuffer2) && Click stop watch off
+*!*	?"loop based working days",TRANSFORM(ElapsedTicks(m.lcBuffer1, m.lcBuffer2, m.lcBuffer3)) + " secs"
+
+*[/code]
+
+*This is buf2num.prg
+*[code]
+function buf2num
+LPARAMETERS m.tcBuffer
+************************
+    RETURN ASC(SUBSTR(m.tcBuffer, 1,1)) + ;
+        ASC(SUBSTR(m.tcBuffer, 2,1)) * 2^8 + ;
+        ASC(SUBSTR(m.tcBuffer, 3,1)) * 2^16 + ;
+        ASC(SUBSTR(m.tcBuffer, 4,1)) * 2^24
+ENDFUNC
+*[code]
+
+*This is getticks.prg
+*[code]
+function getticks
+LPARAMETERS m.tcBuffer
+*This is for converting an 8 byte buffer to a decimal number
+*specifically for the High Resolution timing api.
+RETURN buf2num(SUBSTR(m.tcBuffer,1,4)) + buf2num(SUBSTR(m.tcBuffer,5,4)) * 2^32
+*[/code]
+
+*This is elapsedticks.prg
+*[code]
+function elapsedticks
+lparameters m.tcBuffer1, m.tcBuffer2, m.tcBuffer3
+return (GetTicks(@m.tcBuffer2)-GetTicks(@m.tcBuffer1)) / GetTicks(@m.tcBuffer3)+.0000
+*[/code]
+
+*This is QueryPerformanceCounter.prg
+*[code]
+function QueryPerformanceCounter
+LPARAMETERS m.lpPerformanceCount
+DECLARE INTEGER QueryPerformanceCounter IN kernel32 STRING @lpPerformanceCount
+RETURN QueryPerformanceCounter(@m.lpPerformanceCount)
+*[/code]
+
+
+*This is QueryPerformanceFrequency.prg
+*[code]
+FUNCTION QueryPerformanceFrequency
+LPARAMETERS m.lpFrequency
+DECLARE INTEGER QueryPerformanceFrequency IN kernel32 STRING @lpFrequency
+RETURN QueryPerformanceFrequency(@m.lpFrequency)
+*[/code]
+
+*This is tallytableweekdays.prg
+*[code]
+function tallytableweekdays
+lparameters ldStart, ldEnd
+*Even giving this code the advantage of a column already populated with the dow(dDate)
+*it still doesn't even come close to a formula.
+select count(*) from CalendarTally where dow2 in (2,3,4,5,6) and dDate between m.ldStart and m.ldEnd into array laCount
+return laCount[1]
+endfunc
+*[/code]
+
+
+*This is myweekdays.prg
+*[code]
+function myweekdays
+lparameters tdStart, tdEnd
+local lnStartDoW, lnEndDoW
+lnStartDoW=dow(m.tdStart,2)-1 && number of the day of the week of the start date relative to the Monday
+lnEndDoW=dow(m.tdEnd,2) && number of the day of the week of the end date relative to the Monday.
+return ;
+	int(;
+			5/7*;
+			(;
+				(m.tdEnd+7-m.lnEndDoW); && the following Sunday
+				-(m.tdStart-m.lnStartDoW); && the previous Monday
+			);
+		);
+	-m.lnStartDow;
+	-(5-min(5,m.lnEndDOW)) && number of days between the End date and the Friday
+*[/code]
+
+*This is Ben's weekdays.prg
+[code]
+FUNCTION benWEEKDAYS
+*  Return the number of days that are MONDAY - FRIDAY
+*  in the passed date range WITHOUT LOOPING!
+*
+*  Author:  Ben Creighton with input from Mike Yearwood and various
+*                UniversalThread and Foxite members.
+*
+*  USAGE:
+*    ?WEEKDAYS({^2004-05-01},{^2004-05-31})
+*
+*  OR:
+*    ldFrom = {^2004-05-01}
+*    ldTo = {^2004-05-31}
+*    lnWeekdays = WEEKDAYS(m.ldFrom, m.ldTo)
+*    ?"The number of weekdays was: " + ALLTRIM(STR(m.lnWeekdays)) + "."
+*
+*  RETURNS:
+*    A numeric value for the number of weekdays.
+*    This also indicates the routine succeeded.
+*    It crashes when called with incorrect parameters.
+*
+*  lParameters
+*     tdDate1 (R)     Start of the date range.
+*     tdDate2 (R)     End of the date range.
+*
+LPARAMETERS m.tdDate1, m.tdDate2
+LOCAL lnJ1, lnJ2
+
+lnJ1 = VAL(SYS(11, m.tdDate1))
+lnJ2 = VAL(SYS(11, m.tdDate2))
+
+RETURN (INT(m.lnJ2 / 7) - INT(m.lnJ1 / 7)) * 5 ;
+  - MIN(m.lnJ1 % 7 + 1, 5) ;
+  + MIN(m.lnJ2 % 7 + 1, 5)
+[/code]
+endfunc
+
+
+*This is mmerlinweekdays. This is proof that I do not think there is only MY way to do everything.
+*I seek the better ways and promote them for all.
+[code]
+function mmerlinnweekdays
+PARAMETERS qStart, qEnd
+PRIVATE zdays
+zdays = ABS(m.qStart - m.qEnd) + 1
+RETURN 5 * INT(m.zdays/7) + LEN(CHRTRAN(SUBSTR('011111001111', DOW(MIN(m.qStart, m.qEnd)), m.zdays % 7), '0', ''))
+[/code]
+endfunc
+
+
+FUNCTION AIWeekDays(m.tdStartDate, m.tdEndDate)
+*Produced by PerplexityAI
+    nStartDOW = DOW(m.tdStartDate)
+    nEndDOW = DOW(m.tdEndDate)
+
+    RETURN (m.nEndDOW - m.nStartDOW + ;
+            IIF(m.nEndDOW < m.nStartDOW, 7, 0) - ;
+            IIF(m.nEndDOW = 1, 1, 0) - ;
+            IIF(m.nStartDOW = 7, 1, 0))
+ENDFUNC
+
+FUNCTION Any8YearOldWEEKDAYS(m.tdStartDate, m.tdEndDate)
+local lnCount, lnDay, ldStart, ldEnd
+ldStart =  min(m.tdStartDate, m.tdEndDate)
+ldEnd = max(m.tdStartDate, m.tdEndDate)
+lnCount = 0
+FOR lnDay = m.ldStart - m.ldStart to m.ldEnd - m.ldStart
+	lnCount = m.lnCount + IIF(INLIST(DOW(m.ldStart + m.lnDay), 2, 3, 4, 5, 6),1,0)
+ENDFOR
+RETURN m.lnCount
+
+ENDFUNC
+
+
+#endif .f.
