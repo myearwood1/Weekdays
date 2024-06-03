@@ -18,13 +18,13 @@ Get all the speed, with readable, maintainable code which does not even take lon
 Even though I made a small error in the first MyWeekdays, Foxite showed no politeness. No collaboration was offered. 
 Only criticism and an attempt to belittle me. I let the numbers speak for themselves.
 
-I fixed the error and the code is the fastest so far.
+I fixed the error and the code was the fastest at that time.
 
-As to those who feel Ben's was alright or, worse, those that think the 8-year-old-child loop code is good enough, 
+As to those who feel Ben's was alright or, worse, those who think the 8-year-old-child loop code is good enough, 
 I'm ashamed to think we are all supposedly equal programmers.
 
 Novices, you can learn a lot from this code. This uses the Windows API to get high-resolution timing. 
-Yet you don't see a single declare API. Try and understand how. It's a good method. This must run multiple times, 
+Yet you only see a single declare API call. Try and understand how. It's a good method. This must run multiple times, 
 just like a microbiologist grows a sample in a petri dish. That is science, not flat-earther misconceptions.
 
 In this case the calculation methods are so much better than the loop or query that I had to run it 100,000 times just to get a visible measure.
