@@ -101,13 +101,6 @@ ENDFOR X
 =QueryPerformanceCounter(@m.lcBuffer2) && Click stop watch off
 ?"Manually hard coded weekdays ABS",TRANSFORM(ElapsedTicks(m.lcBuffer1, m.lcBuffer2, m.lcBuffer3)) + " secs"
 
-*!*	=QueryPerformanceCounter(@m.lcBuffer1) && Click stop watch on
-*!*	FOR X = 1 TO knIterations
-*!*		w=theworking_days(kdStart,kdEnd)
-*!*	ENDFOR X
-*!*	=QueryPerformanceCounter(@m.lcBuffer2) && Click stop watch off
-*!*	?"loop based working days",TRANSFORM(ElapsedTicks(m.lcBuffer1, m.lcBuffer2, m.lcBuffer3)) + " secs"
-
 *[/code]
 
 *This is buf2num.prg
