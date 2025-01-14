@@ -233,14 +233,24 @@ endfunc
 
 FUNCTION AIWeekDays(m.tdStartDate, m.tdEndDate)
 *Produced by PerplexityAI
-    nStartDOW = DOW(m.tdStartDate)
-    nEndDOW = DOW(m.tdEndDate)
-
-    RETURN (m.nEndDOW - m.nStartDOW + ;
+*This first bit of code was the AI halucinating.
+*It does not return the number of weekdays.
+*!*    nStartDOW = DOW(m.tdStartDate)
+*!*    nEndDOW = DOW(m.tdEndDate)
+*!*    RETURN (m.nEndDOW - m.nStartDOW + ;
             IIF(m.nEndDOW < m.nStartDOW, 7, 0) - ;
             IIF(m.nEndDOW = 1, 1, 0) - ;
             IIF(m.nStartDOW = 7, 1, 0))
-ENDFUNC
+*This was a first acceptable response.
+PARAMETERS pdStart, pdEnd
+LOCAL lnDays, lnStartAdj, lnEndAdj
+
+* Get start and end day of week (1=Sunday, 7=Saturday)
+lnStartAdj = MAX(0, MIN(2, 7-DOW(pdStart)))
+lnEndAdj = MAX(0, MIN(2, DOW(pdEnd)-1))
+
+* Calculate weekdays using 5/7 ratio minus adjustments
+RETURN ((pdEnd - pdStart + 1) * (5/7)) - lnStartAdj - lnEndAdjENDFUNC
 
 FUNCTION Any8YearOldWEEKDAYS(m.tdStartDate, m.tdEndDate)
 local lnCount, lnDay, ldStart, ldEnd
